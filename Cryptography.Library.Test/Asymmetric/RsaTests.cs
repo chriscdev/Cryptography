@@ -1,5 +1,6 @@
 using Cryptography.Library.Symmetric;
 using Cryptography.Library.Test.Factories;
+using System.Security.Cryptography;
 using Xunit;
 
 namespace Cryptography.Library.Test.Asymmetric
@@ -18,7 +19,7 @@ namespace Cryptography.Library.Test.Asymmetric
       var actual = rsa.Decrypt(cipher);
 
       Assert.Equal(data, actual);
-    }
+    }    
 
     [Theory]
     [InlineData("Hello world")]
@@ -34,6 +35,18 @@ namespace Cryptography.Library.Test.Asymmetric
       var actual = rsaDecrypt.Decrypt(cipher);
 
       Assert.Equal(data, actual);
+    }
+
+    [Fact]
+    public void GeneratePrivateAndPublicKeyPair()
+    {
+      var rsa = new RSACryptoServiceProvider(2048);
+
+      var privateKey = rsa.ToXmlString(true);
+      var publicKey = rsa.ToXmlString(false);
+
+      Assert.NotEmpty(privateKey);
+      Assert.NotEmpty(publicKey);
     }
   }
 }

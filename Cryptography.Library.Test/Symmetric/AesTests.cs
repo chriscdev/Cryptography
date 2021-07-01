@@ -1,4 +1,6 @@
 using Cryptography.Library.Symmetric;
+using Newtonsoft.Json;
+using System;
 using Xunit;
 
 namespace Cryptography.Library.Test.Symmetric

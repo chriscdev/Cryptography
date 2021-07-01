@@ -7,14 +7,22 @@ namespace Cryptography.Library.Symmetric
 {
   public class Aes : ICryptographyAlgorithm
   {
-    private readonly System.Security.Cryptography.Aes _aes;
+    private readonly AesCryptoServiceProvider _aes;
 
     /// <summary>
     /// Constructor which will create a new key and IV
     /// </summary>
     public Aes()
     {
-      _aes = System.Security.Cryptography.Aes.Create();
+      _aes = new AesCryptoServiceProvider();
+    }
+
+    /// <summary>
+    /// Constructor which will take an Aes instance
+    /// </summary>
+    public Aes(AesCryptoServiceProvider aes)
+    {
+      _aes = aes;
     }
 
     /// <summary>
@@ -31,7 +39,7 @@ namespace Cryptography.Library.Symmetric
     ///<inheritdoc/>
     public string Encrypt(string data)
     {
-      ICryptoTransform encryptor = _aes.CreateEncryptor(_aes.Key, _aes.IV);
+      using ICryptoTransform encryptor = _aes.CreateEncryptor(_aes.Key, _aes.IV);
 
       using (var msEncrypt = new MemoryStream())
       {
@@ -51,7 +59,7 @@ namespace Cryptography.Library.Symmetric
     ///<inheritdoc/>
     public string Decrypt(string cipher)
     {
-      ICryptoTransform decryptor = _aes.CreateDecryptor(_aes.Key, _aes.IV);
+      using ICryptoTransform decryptor = _aes.CreateDecryptor(_aes.Key, _aes.IV);
 
       using (var msDecrypt = new MemoryStream(Convert.FromBase64String(cipher)))
       {

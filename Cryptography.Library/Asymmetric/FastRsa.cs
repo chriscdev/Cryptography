@@ -15,33 +15,45 @@ namespace Cryptography.Library.Symmetric
   {
     private readonly Aes _aesEncrypt;
     private readonly Rsa _rsa;
-    private readonly string _encryptedKeyAndIV;
+    
+    /// <summary>
+    /// Gets the RSA encrypted AES Key and IV that will be appended to the messages. This value can only be set via the constructor.
+    /// </summary>
+    public string EncryptedKeyAndIV { get; }
 
     /// <summary>
-    /// Constructor which will create a new key and IV
+    /// Constructor which will create a new key, IV and encrypt it. You can also pass in existing values for the arguments if you want to reuse accross instances or sessions.
+    /// Note: If you want to reuse encrypedKeyAndIV then make sure you also use the AES Key and IV that was used to generate the cipher.
     /// </summary>
     /// <param name="rsaKeyXml">Key XML exported by using ToXMLString(). Public key can only encrypt but private key can encrypt and decrypt.</param>
-    /// <param name="aesKey">Optional. Set the AES key, leave null to generate a new key (recommended)/</param>
-    /// <param name="aesIV">Optional. Set the AES IV, leave null to generate a new IV (recommended)/</param></param>
-    public FastRsa(string rsaKeyXml, byte[] aesKey = null, byte[] aesIV = null)
+    /// <param name="encrypedKeyAndIV">Optional. Set the EncryptedKeyAndIV, this is used if you stored the encryptedKeyAndIV and want to reuse the same AES Key and IV in subsequent encrypt/decrypt. Leave null to generate it. (recommended)</param>
+    public FastRsa(string rsaKeyXml, string encrypedKeyAndIV = null)
     {
       var internalAes = new AesCryptoServiceProvider();
-      
-      if (aesKey != null && aesKey.Length > 0)
-        internalAes.Key = aesKey;
+          
+      _rsa = new Rsa(rsaKeyXml);
 
-      if (aesIV != null && aesIV.Length > 0)
-        internalAes.IV = aesIV;
+      if (string.IsNullOrWhiteSpace(encrypedKeyAndIV))
+      {
+        //Create new EncryptedKeyAndIV using a new AES key and IV
+        EncryptedKeyAndIV = _rsa.Encrypt($"{Convert.ToBase64String(internalAes.Key)} {Convert.ToBase64String(internalAes.IV)}");
+      }
+      else
+      {
+        //Get the AES key and IV from the encrypedKeyAndIV
+        EncryptedKeyAndIV = encrypedKeyAndIV;
+        (string key, string iv) = DecryptKeyCipher(encrypedKeyAndIV);
+        internalAes.Key = Convert.FromBase64String(key);
+        internalAes.IV = Convert.FromBase64String(iv);
+      }
 
       _aesEncrypt = new Aes(internalAes);
-      _rsa = new Rsa(rsaKeyXml);
-      _encryptedKeyAndIV = _rsa.Encrypt($"{Convert.ToBase64String(internalAes.Key)} {Convert.ToBase64String(internalAes.IV)}");
     }
 
     ///<inheritdoc/>
     public string Encrypt(string data)
     {
-      return $"{_encryptedKeyAndIV} {_aesEncrypt.Encrypt(data)}";
+      return $"{EncryptedKeyAndIV} {_aesEncrypt.Encrypt(data)}";
     }
 
     ///<inheritdoc/>
@@ -52,17 +64,24 @@ namespace Cryptography.Library.Symmetric
       if (cipherParts.Length != 2)
         throw new ArgumentException("Not a valid FastRsa cipher, missing symmetric key and IV cipher.", nameof(cipher));
 
-      var keyAndIv = _rsa.Decrypt(cipherParts[0]).Split(" ");
-
-      if (keyAndIv.Length != 2)
-        throw new ArgumentException("Not a valid FastRsa cipher, missing key and/or IV in symmetric key and IV cipher.", nameof(cipher));
-
       //Fast path: If the current encrypted key and IV are the same as the one in the cipher then use the current _aesEncrypt instance, no need to create a new one.
-      if (_encryptedKeyAndIV == cipherParts[0])
+      if (EncryptedKeyAndIV == cipherParts[0])
         return _aesEncrypt.Decrypt(cipherParts[1]);
 
-      using var aesDecrypt = new Aes(Convert.FromBase64String(keyAndIv[0]), Convert.FromBase64String(keyAndIv[1]));
+      (string key, string iv) = DecryptKeyCipher(cipherParts[0]);
+    
+      using var aesDecrypt = new Aes(Convert.FromBase64String(key), Convert.FromBase64String(iv));
       return aesDecrypt.Decrypt(cipherParts[1]);
+    }
+
+    private (string key, string iv) DecryptKeyCipher(string keyCipher)
+    {
+      var keyAndIv = _rsa.Decrypt(keyCipher).Split(" ");
+
+      if (keyAndIv.Length != 2)
+        throw new ArgumentException("Not a valid FastRsa cipher, missing key and/or IV in symmetric key and IV cipher.");
+
+      return (keyAndIv[0], keyAndIv[1]);
     }
 
     /// <summary>

@@ -12,7 +12,7 @@ namespace Cryptography.Library.Test.Asymmetric
     [InlineData("The quick brown fox jumps over the lazy dog")]
     public void Encrypt_Then_Decrypt_Given_SameInstanceAndPrivateKey_Should_GetOriginalString(string data)
     {
-      var rsa = new Rsa(RsaKeyFactory.Create1024PrivateKey());
+      var rsa = new Rsa(RsaKeyFactory.Create1024BitPrivateKey());
 
       var cipher = rsa.Encrypt(data);
 
@@ -26,11 +26,11 @@ namespace Cryptography.Library.Test.Asymmetric
     [InlineData("The quick brown fox jumps over the lazy dog")]
     public void Encrypt_Then_Decrypt_Given_DifferentInstancesUsingPublicToEncryptAndPrivateKeyToDecrypt_Should_GetOriginalString(string data)
     {
-      var rsaEncrypt = new Rsa(RsaKeyFactory.Create1024PublicKey());
+      var rsaEncrypt = new Rsa(RsaKeyFactory.Create1024BitPublicKey());
 
       var cipher = rsaEncrypt.Encrypt(data);
 
-      var rsaDecrypt = new Rsa(RsaKeyFactory.Create1024PrivateKey());
+      var rsaDecrypt = new Rsa(RsaKeyFactory.Create1024BitPrivateKey());
 
       var actual = rsaDecrypt.Decrypt(cipher);
 

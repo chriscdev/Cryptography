@@ -60,8 +60,8 @@ The FastRsa implementation uses a MemoryCache underneath that it uses to store A
 
 When enabling the cache you can also specify CacheItemOptions which allows you to specify the following:
 * Cache expiry type
-** Absolute expiry - Uses a fixed time to expire the cache whether it was accessed or not.
-** Sliding window - Uses the expiry time to expire the cache if the item wasn't accessed whithin that time.
+	* Absolute expiry - Uses a fixed time to expire the cache whether it was accessed or not.
+	* Sliding window - Uses the expiry time to expire the cache if the item wasn't accessed whithin that time.
 * Cache expiry time
 
 ### Fast path

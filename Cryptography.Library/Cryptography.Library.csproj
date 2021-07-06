@@ -2,6 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <Version>1.0.1</Version>
+    <Authors>Chris Coetzee</Authors>
+    <Description>A .Net cryptography library to easily do symmetric and asymmetric encryption/decryption. It also includes a fast hybrid encryption algorithm which combines the strengths of both asymmetric and symmetric encryption called FastRsa.</Description>
+    <PackageProjectUrl>https://github.com/chriscdev/Cryptography</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/chriscdev/Cryptography</RepositoryUrl>
+    <PackageTags>Cryptography Fast RSA AES</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
+  </ItemGroup>
 
 </Project>

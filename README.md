@@ -14,13 +14,13 @@ For a lack of a better name I just called it FastRsa although it uses both RSA a
 The cipher is therefore a concatenation of RSA.Encrypt(AES.Key, AES.IV) and AES.Encrypt(data).
 
 ## For encryption the following steps happen:
-1. Encrypt the AES key and IV using RSA encryption.
+1. Encrypt the AES key and IV using RSA encryption (see Tips for fast encryption).
 2. Encrypt the data payload using AES encryption.
 3. Concatenate the encrypted output of step 1 and 2 and that is the cipher.
 
 ## For decryption the following steps happen:
-1. If the AES key and IV cipher matches the current internal cipher then use the fast path meaning it will use the current cached key and IV. Else decrypt the AES key and IV using RSA encryption.
-2. Decrypt the data payload using AES encryption and the key and IV decrypted from step 1.
+1. Decrypt the AES key and IV using RSA decryption (see Tips for fast decryption).
+2. Decrypt the data payload using AES decryption and the key and IV decrypted from step 1.
 
 It is highly recommended to use the RSA public key for encryption and the private key for decryption and it goes without saying to store the private key in a safe place!
 

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -41,7 +42,7 @@ namespace Cryptography.Library.Test.Asymmetric
       var actual = fastRsa.Decrypt(cipher);
 
       Assert.Equal(data, actual);
-    }        
+    }
 
     [Theory]
     [InlineData("The quick brown fox jumps over the lazy dog", "gfRvtMnf9ZklJJ1u6opDwqN2Psh1NULbZAZ7DsBVAlns6T7rEs1OFG0wvHwUfjbZoH4Nnz6LDjJoXwoi2+7COaRpFnWHdQf0S0jA4ZOdYibgi9opPB8y2sXENOKDyVhsAiVZOp9PiaeKRiiLiXcFaJtrw4gJvecEObbUwbfSe3Q= RhGctD8s9Lx/t2bPeg6qz6CtBwc4nk7gulXnFoROuLMTS98SlFP14BcvL9Lm/3tD")]
@@ -225,10 +226,12 @@ namespace Cryptography.Library.Test.Asymmetric
     [Fact]
     public void Encrypt_ThreadSafety()
     {
+      ThreadPool.SetMinThreads(10, 10); // set the threadpool minimum to not wait for the hill climb alogirthm to spin up more threads.
       var fastRsa = new FastRsa(RsaKeyFactory.Create1024BitPrivateKey());
       var tasks = new List<Task>();
       var cancellationSource = new CancellationTokenSource(10000);
-      for (var i = 0; i < 100; i++)
+
+      for (var i = 0; i < 10; i++)
       {
         tasks.Add(Task.Run(() =>
         {
@@ -236,32 +239,51 @@ namespace Cryptography.Library.Test.Asymmetric
           {
             fastRsa.Encrypt("The quick brown fox jumps over the lazy dog");
           }
-        }));
+        }, cancellationSource.Token));
       }
 
-      Task.WaitAll(tasks.ToArray());
+      try
+      {
+        Task.WaitAll(tasks.ToArray());
+      }
+      catch (AggregateException aggEx)
+      {
+        //We expect a TaskCanceledException to be thrown if the task hasn't been scheduled it when cancellation happens, this can happen if system has limited resources expecially on build servers
+        //If any other exception was thrown then fail the test
+        Assert.True(aggEx.InnerExceptions.All(inner => inner is TaskCanceledException));
+      }
     }
 
     [Fact]
-    public void Encrypt_Then_Decrypt_ThreadSafety()
+    public void Decrypt_ThreadSafety()
     {
+      ThreadPool.SetMinThreads(10, 10); // set the threadpool minimum to not wait for the hill climb alogirthm to spin up more threads.
       var fastRsa = new FastRsa(RsaKeyFactory.Create1024BitPrivateKey());
       var tasks = new List<Task>();
       var cancellationSource = new CancellationTokenSource(10000);
-      for (var i = 0; i < 100; i++)
+
+      for (var i = 0; i < 10; i++)
       {
         var inner = i;
         tasks.Add(Task.Run(() =>
         {
           while (!cancellationSource.IsCancellationRequested)
           {
-            var cipher = fastRsa.Encrypt("The quick brown fox jumps over the lazy dog");
-            fastRsa.Decrypt(cipher);
+            fastRsa.Decrypt("gfRvtMnf9ZklJJ1u6opDwqN2Psh1NULbZAZ7DsBVAlns6T7rEs1OFG0wvHwUfjbZoH4Nnz6LDjJoXwoi2+7COaRpFnWHdQf0S0jA4ZOdYibgi9opPB8y2sXENOKDyVhsAiVZOp9PiaeKRiiLiXcFaJtrw4gJvecEObbUwbfSe3Q= RhGctD8s9Lx/t2bPeg6qz6CtBwc4nk7gulXnFoROuLMTS98SlFP14BcvL9Lm/3tD");
           }
-        }));
+        }, cancellationSource.Token));
       }
 
-      Task.WaitAll(tasks.ToArray());
+      try
+      {
+        Task.WaitAll(tasks.ToArray());
+      }
+      catch (AggregateException aggEx)
+      {
+        //We expect a TaskCanceledException to be thrown if the task hasn't been scheduled it when cancellation happens, this can happen if system has limited resources expecially on build servers
+        //If any other exception was thrown then fail the test
+        Assert.True(aggEx.InnerExceptions.All(inner => inner is TaskCanceledException));
+      }
     }
   }
 }

@@ -3,6 +3,7 @@ using Cryptography.Library.Enums;
 using Cryptography.Library.Interfaces;
 using Cryptography.Library.Symmetric;
 using Cryptography.Library.Test.Factories;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -117,8 +118,10 @@ namespace Cryptography.Library.Test.Asymmetric
     [InlineData("The quick brown fox jumps over the lazy dog", "gfRvtMnf9ZklJJ1u6opDwqN2Psh1NULbZAZ7DsBVAlns6T7rEs1OFG0wvHwUfjbZoH4Nnz6LDjJoXwoi2+7COaRpFnWHdQf0S0jA4ZOdYibgi9opPB8y2sXENOKDyVhsAiVZOp9PiaeKRiiLiXcFaJtrw4gJvecEObbUwbfSe3Q= RhGctD8s9Lx/t2bPeg6qz6CtBwc4nk7gulXnFoROuLMTS98SlFP14BcvL9Lm/3tD")]
     public void Decrypt_Given_MultipleDecryptRequests_With_CacheEnabledAndCacheItemOptionsWithAbsoluteCacheExpiry_Should_GetOriginalDataFasterWithSecondRun(string data, string cipher)
     {
+      var memCache = new MemoryCache(new MemoryCacheOptions());
+
       // need to use the private key if you want to specify EncryptedKeyAndIV
-      var fastRsaEncrypt = new FastRsa(RsaKeyFactory.Create1024BitPrivateKey(), true, new CacheItemOptions(CacheExpiryType.Absolute, TimeSpan.FromSeconds(10)));
+      var fastRsaEncrypt = new FastRsa(RsaKeyFactory.Create1024BitPrivateKey(), true, memCache, new CacheItemOptions(CacheExpiryType.Absolute, TimeSpan.FromSeconds(10)));
 
       var sw = Stopwatch.StartNew();
       var actualFirst = fastRsaEncrypt.Decrypt(cipher);
@@ -138,8 +141,10 @@ namespace Cryptography.Library.Test.Asymmetric
     [InlineData("The quick brown fox jumps over the lazy dog", "gfRvtMnf9ZklJJ1u6opDwqN2Psh1NULbZAZ7DsBVAlns6T7rEs1OFG0wvHwUfjbZoH4Nnz6LDjJoXwoi2+7COaRpFnWHdQf0S0jA4ZOdYibgi9opPB8y2sXENOKDyVhsAiVZOp9PiaeKRiiLiXcFaJtrw4gJvecEObbUwbfSe3Q= RhGctD8s9Lx/t2bPeg6qz6CtBwc4nk7gulXnFoROuLMTS98SlFP14BcvL9Lm/3tD")]
     public void Decrypt_Given_MultipleDecryptRequests_With_CacheEnabledAndCacheItemOptionsWithSlidingWindowCacheExpiry_Should_GetOriginalDataFasterWithSecondRun(string data, string cipher)
     {
+      var memCache = new MemoryCache(new MemoryCacheOptions());
+
       // need to use the private key if you want to specify EncryptedKeyAndIV
-      var fastRsaEncrypt = new FastRsa(RsaKeyFactory.Create1024BitPrivateKey(), true, new CacheItemOptions(CacheExpiryType.SlidingWindow, TimeSpan.FromSeconds(10)));
+      var fastRsaEncrypt = new FastRsa(RsaKeyFactory.Create1024BitPrivateKey(), true, memCache, new CacheItemOptions(CacheExpiryType.SlidingWindow, TimeSpan.FromSeconds(10)));
 
       var sw = Stopwatch.StartNew();
       var actualFirst = fastRsaEncrypt.Decrypt(cipher);
